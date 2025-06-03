@@ -1,0 +1,10 @@
+[project]
+name = "xcode_monitor"
+version = "0.1.0"
+description = "Xcode Monitoring MCP Server"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "tk",
+    "mcp>=1.9.2"
+]
