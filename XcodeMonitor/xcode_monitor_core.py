@@ -6,6 +6,7 @@ import json
 import subprocess
 import os
 import time
+import threading
 from pathlib import Path
 import re
 import glob
@@ -20,37 +21,30 @@ class XcodeMonitorCore:
         self.monitoring = False
         self.monitor_thread = None
         self.file_watcher_thread = None
-        # Add any other relevant threads/processes here (build server, LSP, etc.)
 
     def start_monitoring(self):
         print(f"[XcodeMonitorCore] Starting monitoring for: {self.root_path}")
         self.monitoring = True
-        # Start monitor thread
         if self.monitor_thread is None or not self.monitor_thread.is_alive():
             print("[XcodeMonitorCore] Starting monitor thread...")
             self.monitor_thread = threading.Thread(target=self.monitor_loop, daemon=True)
             self.monitor_thread.start()
-        # Start file watcher thread
         if self.file_watcher_thread is None or not self.file_watcher_thread.is_alive():
             print("[XcodeMonitorCore] Starting file watcher thread...")
             self.file_watcher_thread = threading.Thread(target=self.file_watcher_loop, daemon=True)
             self.file_watcher_thread.start()
-        # TODO: Start build server/LSP/etc as needed, with logging
 
     def stop_monitoring(self):
         print(f"[XcodeMonitorCore] Stopping monitoring for: {self.root_path}")
         self.monitoring = False
-        # Stop monitor thread
         if self.monitor_thread and self.monitor_thread.is_alive():
             print("[XcodeMonitorCore] Joining monitor thread...")
             self.monitor_thread.join(timeout=2)
             self.monitor_thread = None
-        # Stop file watcher thread
         if self.file_watcher_thread and self.file_watcher_thread.is_alive():
             print("[XcodeMonitorCore] Joining file watcher thread...")
             self.file_watcher_thread.join(timeout=2)
             self.file_watcher_thread = None
-        # TODO: Stop/clean up build server/LSP/etc as needed, with logging
 
     def set_project_path(self, new_path):
         print(f"[XcodeMonitorCore] Request to change project path to: {new_path}")
@@ -64,43 +58,17 @@ class XcodeMonitorCore:
     def get_project_path(self):
         return self.root_path
 
-    # Example monitor loop (should be implemented/expanded as needed)
     def monitor_loop(self):
         print(f"[XcodeMonitorCore] Monitor loop started for: {self.root_path}")
         while self.monitoring:
-            # Insert monitoring logic here
             time.sleep(5)
         print(f"[XcodeMonitorCore] Monitor loop stopped for: {self.root_path}")
 
-    # Example file watcher loop (should be implemented/expanded as needed)
     def file_watcher_loop(self):
         print(f"[XcodeMonitorCore] File watcher loop started for: {self.root_path}")
         while self.monitoring:
-            # Insert file watching logic here
             time.sleep(5)
         print(f"[XcodeMonitorCore] File watcher loop stopped for: {self.root_path}")
-
-    def start_monitoring(self):
-        """Start Xcode monitoring (placeholder for real logic)."""
-        # TODO: Implement actual monitoring startup logic here
-        print(f"[XcodeMonitorCore] Monitoring started for: {self.root_path}")
-        self.monitoring = True
-
-    def stop_monitoring(self):
-        """Stop Xcode monitoring (placeholder for real logic)."""
-        # TODO: Implement actual monitoring shutdown logic here
-        print(f"[XcodeMonitorCore] Monitoring stopped for: {self.root_path}")
-        self.monitoring = False
-
-    def set_project_path(self, new_path):
-        """Change the monitored project path and restart monitoring."""
-        self.stop_monitoring()
-        self.root_path = os.path.abspath(new_path)
-        self.start_monitoring()
-        return self.root_path
-
-    def get_project_path(self):
-        return self.root_path
 
 # --- Project/Workspace Detection ---
 def find_workspace_and_project(directory=None):
@@ -241,8 +209,6 @@ def get_diagnostics(directory=None):
     directory = directory or os.getcwd()
     diagnostics = []
     try:
-        # 0. Get live diagnostics directly from Xcode (stub: implement as needed)
-        # diagnostics.extend(get_xcode_live_diagnostics())
         # 1. Try to parse recent build logs with XCLogParser
         result = subprocess.run(
             ['which', 'xclogparser'],
@@ -272,6 +238,7 @@ def get_diagnostics(directory=None):
                         pass
                 except Exception as e:
                     diagnostics.append({'severity': 'error', 'message': f'XCLogParser error: {e}'})
+        
         # 2. Parse diagnostics.plist
         derived_data = Path.home() / "Library/Developer/Xcode/DerivedData"
         for plist_path in derived_data.rglob('diagnostics.plist'):
@@ -282,6 +249,7 @@ def get_diagnostics(directory=None):
                         diagnostics.append(diag)
             except Exception as plist_err:
                 diagnostics.append({'severity': 'error', 'message': f'Error parsing diagnostics.plist: {plist_err}'})
+        
         # 3. SwiftPM logs
         swift_pm_logs = Path.home() / ".build/logs"
         if swift_pm_logs.exists():
